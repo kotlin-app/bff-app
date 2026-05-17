@@ -28,6 +28,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
                     .pathMatchers("/mock/**").permitAll()               // モックサービスは認証不要
                     .pathMatchers("/actuator/**").permitAll()           // ヘルスチェックは認証不要
                     .pathMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll() // Swagger UIは認証不要
+                    .pathMatchers("/api/admin/**").hasRole("ADMIN")    // 管理者APIはADMINロールのみ
                     .pathMatchers("/api/cache/**").hasRole("ADMIN")    // キャッシュ管理はADMINロールのみ
                     .anyExchange().authenticated()                     // それ以外はすべて認証必須
             }

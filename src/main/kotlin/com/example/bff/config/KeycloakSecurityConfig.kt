@@ -35,6 +35,7 @@ class KeycloakSecurityConfig {
                 ex
                     .pathMatchers("/actuator/**").permitAll()
                     .pathMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
+                    .pathMatchers("/api/admin/**").hasRole("ADMIN")
                     .pathMatchers("/api/cache/**").hasRole("ADMIN")
                     .anyExchange().authenticated()
             }
