@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: bff
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
 
 # 各マイクロサービスのURL（Docker環境では環境変数で上書きする）
 services:
@@ -12,8 +16,7 @@ services:
 
 cache:
   reviews:
-    max-size: 100        # 最大100件まで保持
-    expire-minutes: 5    # 5分でキャッシュ失効
+    expire-minutes: 5
 
 jwt:
   secret: "bff-secret-key-must-be-at-least-256-bits-long-for-hs256"
@@ -30,17 +33,15 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-  api-docs:
-    path: /v3/api-docs
-
-management:
   tracing:
     sampling:
       probability: 1.0
   zipkin:
     tracing:
       endpoint: ${ZIPKIN_URL:http://localhost:9411}/api/v2/spans
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
