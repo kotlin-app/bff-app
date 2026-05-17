@@ -23,6 +23,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
             .formLogin { it.disable() } // フォームログインを無効化
             .authorizeExchange { exchanges ->
                 exchanges
+                    .pathMatchers("/", "/index.html", "/*.js", "/*.css", "/*.jsx").permitAll() // フロントエンド静的ファイル
                     .pathMatchers("/api/auth/**").permitAll()          // ログインは認証不要
                     .pathMatchers("/mock/**").permitAll()               // モックサービスは認証不要
                     .pathMatchers("/actuator/**").permitAll()           // ヘルスチェックは認証不要
