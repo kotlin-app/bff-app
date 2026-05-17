@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.HttpStatus
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 
@@ -67,6 +69,16 @@ class ProductController(
                 else -> product.toDetailWebResponse(reviews, avgRating)
             }
         }
+
+    @Operation(summary = "レビュー投稿", security = [SecurityRequirement(name = "BearerAuth")])
+    @ApiResponse(responseCode = "201", description = "投稿成功")
+    @PostMapping("/{id}/reviews")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun postReview(
+        @PathVariable id: Long,
+        @RequestBody body: Map<String, Any>,
+        auth: Authentication,
+    ): Mono<Any> = reviewService.postReview(body + ("productId" to id), auth.name)
 
     private fun Product.toWebResponse() = ProductWebResponse(id, name, price, description, stock, category)
     private fun Product.toMobileResponse() = ProductMobileResponse(id, name, price, stock)

@@ -56,6 +56,25 @@ class ReviewService(
         }
     }
 
+    fun postReview(body: Map<String, Any>, userName: String): Mono<Any> {
+        val productId = (body["productId"] as? Number)?.toLong() ?: return Mono.error(IllegalArgumentException("productId required"))
+        val call = webClient.post()
+            .header("X-User-Name", userName)
+            .bodyValue(body)
+            .retrieve()
+            .bodyToMono(Any::class.java)
+            .flatMap { result ->
+                redis.delete(cacheKey(productId))
+                    .doOnSuccess { log.info("Cache invalidated for productId=$productId after review post") }
+                    .thenReturn(result)
+            }
+
+        return cbFactory.create("review-service").run(call) { ex ->
+            log.error("review-service circuit open (postReview): {}", ex.message)
+            Mono.error(RuntimeException("レビューサービスが利用できません"))
+        }
+    }
+
     fun getCacheStats(): Mono<Map<String, Any>> =
         redis.keys("reviews:*")
             .count()
