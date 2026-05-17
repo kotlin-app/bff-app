@@ -1,25 +1,29 @@
 package com.example.bff.config
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.function.client.WebClient
 
 // BFFが各マイクロサービスを呼び出すための WebClient を定義する設定クラス
-// サービスごとに baseUrl を設定し、@Qualifier で注入先を識別する
+// ベースURLは環境変数で切り替えられるため、ローカル・Docker・本番環境で同じコードが使える
 @Configuration
-class WebClientConfig {
+class WebClientConfig(
+    // ローカル: http://localhost:8081、Docker: http://product-service:8081
+    @Value("\${services.product-url}") private val productUrl: String,
+    // ローカル: http://localhost:8082、Docker: http://review-service:8082
+    @Value("\${services.review-url}") private val reviewUrl: String,
+) {
 
-    // 商品サービスへのHTTPクライアント
     @Bean
     fun productWebClient(): WebClient =
         WebClient.builder()
-            .baseUrl("http://localhost:8080/mock/products")
+            .baseUrl("$productUrl/products")
             .build()
 
-    // レビューサービスへのHTTPクライアント
     @Bean
     fun reviewWebClient(): WebClient =
         WebClient.builder()
-            .baseUrl("http://localhost:8080/mock/reviews")
+            .baseUrl("$reviewUrl/reviews")
             .build()
 }

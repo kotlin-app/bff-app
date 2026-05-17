@@ -5,6 +5,11 @@ spring:
   application:
     name: bff
 
+# 各マイクロサービスのURL（Docker環境では環境変数で上書きする）
+services:
+  product-url: http://localhost:8081
+  review-url: http://localhost:8082
+
 cache:
   reviews:
     max-size: 100        # 最大100件まで保持
