@@ -18,8 +18,16 @@ class ProductService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun getProducts(): Mono<List<Product>> {
+    fun getProducts(q: String? = null, category: String? = null, minPrice: Int? = null, maxPrice: Int? = null): Mono<List<Product>> {
         val call = webClient.get()
+            .uri { b ->
+                b.apply {
+                    q?.let { queryParam("q", it) }
+                    category?.let { queryParam("category", it) }
+                    minPrice?.let { queryParam("minPrice", it) }
+                    maxPrice?.let { queryParam("maxPrice", it) }
+                }.build()
+            }
             .retrieve()
             .bodyToFlux(Product::class.java)
             .collectList()

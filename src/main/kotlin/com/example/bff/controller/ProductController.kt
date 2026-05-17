@@ -31,8 +31,12 @@ class ProductController(
     @GetMapping
     fun getProducts(
         @Parameter(description = "クライアント種別 (web または mobile)", example = "web")
-        @RequestHeader("X-Client-Type", defaultValue = "web") clientType: String
-    ): Mono<Any> = productService.getProducts().map { products ->
+        @RequestHeader("X-Client-Type", defaultValue = "web") clientType: String,
+        @RequestParam(required = false) q: String?,
+        @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) minPrice: Int?,
+        @RequestParam(required = false) maxPrice: Int?,
+    ): Mono<Any> = productService.getProducts(q, category, minPrice, maxPrice).map { products ->
         when (clientType.lowercase()) {
             "mobile" -> products.map { it.toMobileResponse() }
             else -> products.map { it.toWebResponse() }
