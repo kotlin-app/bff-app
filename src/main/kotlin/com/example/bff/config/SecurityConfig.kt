@@ -18,6 +18,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
     @Bean
     fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain =
         http
+            .cors {}                    // CorsConfigurationSource Bean を使用
             .csrf { it.disable() }      // REST APIのためCSRF保護を無効化
             .httpBasic { it.disable() } // Basic認証を無効化
             .formLogin { it.disable() } // フォームログインを無効化

@@ -19,12 +19,6 @@ class ProductController(
     private val reviewService: ReviewService,
 ) {
 
-    private val mockProducts = listOf(
-        Product(1, "コーヒーメーカー", 12000, "高品質なコーヒーメーカーです。", 50, "家電"),
-        Product(2, "ワイヤレスイヤホン", 8000, "ノイズキャンセリング対応の高音質イヤホン。", 100, "家電"),
-        Product(3, "水筒", 3000, "保温・保冷対応の500ml水筒。", 200, "日用品"),
-    )
-
     @Operation(
         summary = "商品一覧取得",
         description = "X-Client-Type: web → 全フィールド、mobile → 軽量レスポンス",
@@ -36,9 +30,11 @@ class ProductController(
     fun getProducts(
         @Parameter(description = "クライアント種別 (web または mobile)", example = "web")
         @RequestHeader("X-Client-Type", defaultValue = "web") clientType: String
-    ): Any = when (clientType.lowercase()) {
-        "mobile" -> mockProducts.map { it.toMobileResponse() }
-        else -> mockProducts.map { it.toWebResponse() }
+    ): Mono<Any> = productService.getProducts().map { products ->
+        when (clientType.lowercase()) {
+            "mobile" -> products.map { it.toMobileResponse() }
+            else -> products.map { it.toWebResponse() }
+        }
     }
 
     @Operation(

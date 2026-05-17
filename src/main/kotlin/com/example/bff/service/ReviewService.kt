@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -17,6 +18,7 @@ class ReviewService(
     @Qualifier("reviewWebClient") private val webClient: WebClient,
     private val redis: ReactiveStringRedisTemplate,
     private val objectMapper: ObjectMapper,
+    private val cbFactory: ReactiveCircuitBreakerFactory<*, *>,
     @Value("\${cache.reviews.expire-minutes}") private val expireMinutes: Long,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -31,25 +33,27 @@ class ReviewService(
                 log.info("Cache HIT: productId=$productId (${reviews.size}件)")
                 reviews
             }
-            .switchIfEmpty(
-                webClient.get()
-                    .uri("/product/$productId?simulate=$simulate")
-                    .retrieve()
-                    .bodyToFlux(Review::class.java)
-                    .collectList()
-                    .timeout(Duration.ofSeconds(3))
-                    .flatMap { reviews ->
-                        val json = objectMapper.writeValueAsString(reviews)
-                        redis.opsForValue()
-                            .set(key, json, Duration.ofMinutes(expireMinutes))
-                            .doOnSuccess { log.info("Cache SET: productId=$productId (${reviews.size}件)") }
-                            .thenReturn(reviews)
-                    }
-                    .onErrorResume { ex ->
-                        log.warn("Review service failed for productId=$productId: ${ex.message}")
-                        Mono.just(emptyList())
-                    }
-            )
+            .switchIfEmpty(fetchAndCache(productId, key, simulate))
+    }
+
+    private fun fetchAndCache(productId: Long, key: String, simulate: String): Mono<List<Review>> {
+        val call = webClient.get()
+            .uri("/product/$productId?simulate=$simulate")
+            .retrieve()
+            .bodyToFlux(Review::class.java)
+            .collectList()
+            .flatMap { reviews ->
+                val json = objectMapper.writeValueAsString(reviews)
+                redis.opsForValue()
+                    .set(key, json, Duration.ofMinutes(expireMinutes))
+                    .doOnSuccess { log.info("Cache SET: productId=$productId (${reviews.size}件)") }
+                    .thenReturn(reviews)
+            }
+
+        return cbFactory.create("review-service").run(call) { ex ->
+            log.warn("review-service circuit open for productId=$productId: ${ex.message}")
+            Mono.just(emptyList())
+        }
     }
 
     fun getCacheStats(): Mono<Map<String, Any>> =

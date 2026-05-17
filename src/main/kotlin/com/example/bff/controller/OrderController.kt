@@ -3,7 +3,9 @@ package com.example.bff.controller
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
@@ -15,7 +17,9 @@ import reactor.core.publisher.Mono
 @RequestMapping("/api/orders")
 class OrderController(
     @Qualifier("orderWebClient") private val webClient: WebClient,
+    private val cbFactory: ReactiveCircuitBreakerFactory<*, *>,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @Operation(summary = "注文作成", security = [SecurityRequirement(name = "BearerAuth")])
     @PostMapping
@@ -23,18 +27,30 @@ class OrderController(
     fun createOrder(
         @RequestBody body: Map<String, Any>,
         auth: Authentication,
-    ): Mono<Any> =
-        webClient.post()
+    ): Mono<Any> {
+        val call = webClient.post()
             .bodyValue(body + ("userId" to auth.name))
             .retrieve()
             .bodyToMono(Any::class.java)
 
+        return cbFactory.create("order-service").run(call) { ex ->
+            log.error("order-service circuit open: {}", ex.message)
+            Mono.error(RuntimeException("注文サービスが利用できません。しばらくしてから再度お試しください。"))
+        }
+    }
+
     @Operation(summary = "自分の注文一覧", security = [SecurityRequirement(name = "BearerAuth")])
     @GetMapping("/my")
-    fun getMyOrders(auth: Authentication): Mono<List<Any>> =
-        webClient.get()
+    fun getMyOrders(auth: Authentication): Mono<List<Any>> {
+        val call = webClient.get()
             .uri("/user/${auth.name}")
             .retrieve()
             .bodyToFlux(Any::class.java)
             .collectList()
+
+        return cbFactory.create("order-service").run(call) { ex ->
+            log.error("order-service circuit open (getMyOrders): {}", ex.message)
+            Mono.just(emptyList())
+        }
+    }
 }
