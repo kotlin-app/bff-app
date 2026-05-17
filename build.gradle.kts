@@ -22,6 +22,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("com.github.ben-manes.caffeine:caffeine")
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
