@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bff
+
+cache:
+  reviews:
+    max-size: 100        # 最大100件まで保持
+    expire-minutes: 5    # 5分でキャッシュ失効
+
+jwt:
+  secret: "bff-secret-key-must-be-at-least-256-bits-long-for-hs256"
+  expiration-ms: 3600000  # 1時間
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

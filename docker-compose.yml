@@ -1,0 +1,40 @@
+services:
+  bff:
+    build: .
+    container_name: bff-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      # 将来のマイクロサービスURLをここで管理する
+      # - PRODUCT_SERVICE_URL=http://product-service:8081
+      # - REVIEW_SERVICE_URL=http://review-service:8082
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - bff-network
+
+  # 将来のマイクロサービスはここに追加する
+  # product-service:
+  #   image: product-service:latest
+  #   container_name: product-service
+  #   ports:
+  #     - "8081:8081"
+  #   networks:
+  #     - bff-network
+  #
+  # review-service:
+  #   image: review-service:latest
+  #   container_name: review-service
+  #   ports:
+  #     - "8082:8082"
+  #   networks:
+  #     - bff-network
+
+networks:
+  bff-network:
+    driver: bridge
