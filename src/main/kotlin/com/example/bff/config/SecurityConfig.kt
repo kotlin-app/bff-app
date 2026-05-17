@@ -2,6 +2,7 @@ package com.example.bff.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder
@@ -9,8 +10,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint
 
-// Spring Security の設定クラス（WebFlux対応）
-// 認証が不要なパスと必要なパスを定義し、JwtAuthFilter を認証フェーズに組み込む
+@Profile("!keycloak")
 @Configuration
 @EnableWebFluxSecurity
 class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
